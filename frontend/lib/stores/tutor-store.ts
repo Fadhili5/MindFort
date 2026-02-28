@@ -114,6 +114,7 @@ interface TutorState {
   nextQuestion: () => void;
   addNetworkEvent: (event: Omit<NetworkEvent, "id" | "timestamp">) => void;
   addLocalEvent: (label: string, component: LocalProcessingEvent["component"]) => void;
+  setFeedback: (feedback: string) => void;
   setTunnelReady: (ready: boolean) => void;
   setLLMReady: (ready: boolean) => void;
   setLLMLoading: (loading: boolean) => void;
@@ -532,6 +533,8 @@ export const useTutorStore = create<TutorState>((set, get) => ({
       totalLocalOps: state.totalLocalOps + 1,
     });
   },
+
+  setFeedback: (feedback) => set({ feedback }),
 
   setTunnelReady: (ready) => set({ tunnelReady: ready }),
 

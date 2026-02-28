@@ -1,13 +1,60 @@
 "use client";
 
+import { useEffect } from "react";
+import { buildFeedbackPrompt } from "@mindvault/llm";
 import { QuestionCard } from "@/components/tutor/question-card";
 import { MasteryProgress } from "@/components/tutor/mastery-progress";
 import { SessionControls } from "@/components/tutor/session-controls";
 import { PrivacyPanel } from "@/components/privacy-panel/privacy-panel";
 import { useTutorStore } from "@/lib/stores/tutor-store";
+import { useLLM } from "@/lib/hooks/use-llm";
+import { DEMO_TOPICS } from "@/lib/topics";
 
 export default function TutorPage() {
-  const { sessionActive } = useTutorStore();
+  const { sessionActive, questionsAnswered } = useTutorStore();
+  const providerRef = useLLM();
+
+  /**
+   * After each incorrect answer, replace the static scaffolding message with
+   * a personalised response from the on-device LLM.
+   * Reads all required state imperatively to avoid stale-closure issues.
+   * Fires once per submitted answer (questionsAnswered is the trigger).
+   */
+  useEffect(() => {
+    const {
+      feedbackType,
+      llmReady,
+      currentQuestion,
+      lastErrorType,
+      scaffoldingLevel,
+      consecutiveErrors,
+      setFeedback,
+      addLocalEvent,
+    } = useTutorStore.getState();
+
+    if (feedbackType !== "incorrect" || !llmReady || !currentQuestion || !lastErrorType) return;
+
+    const provider = providerRef.current;
+    if (!provider) return;
+
+    const topic =
+      DEMO_TOPICS.find((t) => t.id === currentQuestion.topicId)?.name ??
+      currentQuestion.topicId;
+
+    addLocalEvent("Generating AI feedback…", "llm");
+
+    provider
+      .complete(
+        buildFeedbackPrompt({ topic, errorType: lastErrorType, scaffoldingLevel, consecutiveErrors })
+      )
+      .then((text) => {
+        setFeedback(text);
+        useTutorStore.getState().addLocalEvent("AI feedback ready", "llm");
+      })
+      .catch(() => {
+        // Static fallback already shown — silently keep it
+      });
+  }, [questionsAnswered]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">

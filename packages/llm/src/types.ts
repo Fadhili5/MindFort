@@ -5,6 +5,17 @@
 
 export type LLMProviderType = "webllm" | "ollama";
 
+/**
+ * Environment variables consumed by createLLMProvider().
+ * All keys are optional — missing values fall back to defaults.
+ */
+export interface ProviderEnv {
+  NEXT_PUBLIC_LLM_PROVIDER?: string;
+  NEXT_PUBLIC_OLLAMA_URL?: string;
+  NEXT_PUBLIC_OLLAMA_MODEL?: string;
+  NEXT_PUBLIC_WEBLLM_MODEL?: string;
+}
+
 export interface Message {
   role: "system" | "user" | "assistant";
   content: string;

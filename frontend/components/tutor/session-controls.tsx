@@ -3,17 +3,49 @@
 import { useTutorStore } from "@/lib/stores/tutor-store";
 
 export function SessionControls() {
-  const { sessionActive, startSession, endSession, nextQuestion, feedback } =
-    useTutorStore();
+  const {
+    sessionActive,
+    startSession,
+    endSession,
+    nextQuestion,
+    feedback,
+    llmReady,
+    llmLoading,
+    llmProgress,
+  } = useTutorStore();
 
   if (!sessionActive) {
     return (
-      <button
-        onClick={startSession}
-        className="w-full px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium transition-colors"
-      >
-        Start Tutoring Session
-      </button>
+      <div className="space-y-3">
+        {/* On-device model loading bar */}
+        {llmLoading && (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs text-[var(--muted)]">
+              <span>Loading on-device AI model…</span>
+              <span>{Math.round(llmProgress * 100)}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-brand-500 transition-all duration-300"
+                style={{ width: `${Math.round(llmProgress * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={startSession}
+          className="w-full px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-medium transition-colors"
+        >
+          {llmLoading ? "Loading AI Model…" : "Start Tutoring Session"}
+        </button>
+
+        {llmReady && (
+          <p className="text-xs text-center text-[var(--muted)]">
+            On-device AI ready — no data leaves your device
+          </p>
+        )}
+      </div>
     );
   }
 

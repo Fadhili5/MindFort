@@ -9,14 +9,7 @@
  *   NEXT_PUBLIC_WEBLLM_MODEL          → WebLLM model ID override
  */
 
-import type { LLMProvider } from "./types.js";
-
-export type ProviderEnv = {
-  NEXT_PUBLIC_LLM_PROVIDER?: string;
-  NEXT_PUBLIC_OLLAMA_URL?: string;
-  NEXT_PUBLIC_OLLAMA_MODEL?: string;
-  NEXT_PUBLIC_WEBLLM_MODEL?: string;
-};
+import type { LLMProvider, ProviderEnv } from "./types.js";
 
 /**
  * Creates and returns an LLMProvider based on the supplied env config.

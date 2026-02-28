@@ -54,6 +54,9 @@ importers:
 
   frontend:
     dependencies:
+      '@mindvault/llm':
+        specifier: workspace:*
+        version: link:../packages/llm
       '@mindvault/types':
         specifier: workspace:*
         version: link:../packages/types
