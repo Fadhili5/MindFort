@@ -13,12 +13,21 @@ import type {
   GradientAckResponse,
   GlobalModelUpdate,
 } from "@mindvault/types";
+import type { LightwayTunnel } from "@mindvault/lightway";
+
+const PASSTHROUGH_TUNNEL: LightwayTunnel = {
+  isReady: true,
+  send: (url, init) => fetch(url, init),
+  close: () => {},
+};
 
 export class FederatedClient {
   private readonly baseUrl: string;
+  private readonly tunnel: LightwayTunnel;
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, tunnel: LightwayTunnel = PASSTHROUGH_TUNNEL) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
+    this.tunnel = tunnel;
   }
 
   /**
@@ -28,7 +37,7 @@ export class FederatedClient {
   async submitGradient(
     payload: GradientPayload
   ): Promise<GradientAckResponse> {
-    const resp = await fetch(`${this.baseUrl}/gradients`, {
+    const resp = await this.tunnel.send(`${this.baseUrl}/gradients`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -50,7 +59,7 @@ export class FederatedClient {
    * Fetch the current global model version from the aggregation server.
    */
   async getLatestModel(): Promise<GlobalModelUpdate> {
-    const resp = await fetch(`${this.baseUrl}/model`);
+    const resp = await this.tunnel.send(`${this.baseUrl}/model`, { method: "GET" });
 
     if (!resp.ok) {
       throw new Error(

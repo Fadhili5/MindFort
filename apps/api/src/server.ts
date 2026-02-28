@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import sensible from "@fastify/sensible";
 
 import type { Config } from "./config.js";
+import { createTunnel } from "@mindvault/lightway";
 import { AbelianClient } from "./services/abelian.js";
 import { FederatedClient } from "./services/federated.js";
 import { registerSessionRoutes } from "./routes/session.js";
@@ -28,14 +29,26 @@ export async function buildServer(config: Config) {
   await app.register(sensible);
 
   // ---------------------------------------------------------------------------
+  // Lightway tunnel
+  // ---------------------------------------------------------------------------
+  const tunnel = await createTunnel({
+    serverIp: config.LIGHTWAY_SERVER_IP,
+    port:     config.LIGHTWAY_PORT,
+    psk:      config.LIGHTWAY_PSK,
+    mode:     config.LIGHTWAY_MODE,
+  });
+  app.log.info(`[lightway] tunnel mode: ${config.LIGHTWAY_MODE}, ready: ${tunnel.isReady}`);
+
+  // ---------------------------------------------------------------------------
   // Services
   // ---------------------------------------------------------------------------
   const abelian = new AbelianClient(
     config.ABELIAN_NODE_URL,
-    config.BACKEND_DILITHIUM_PRIVATE_KEY
+    config.BACKEND_DILITHIUM_PRIVATE_KEY,
+    tunnel
   );
 
-  const federated = new FederatedClient(config.FED_SERVER_URL);
+  const federated = new FederatedClient(config.FED_SERVER_URL, tunnel);
 
   // ---------------------------------------------------------------------------
   // Routes

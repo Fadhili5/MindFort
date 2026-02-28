@@ -12,14 +12,23 @@ import type {
   MintCredentialRequest,
   MintCredentialResponse,
 } from "@mindvault/types";
+import type { LightwayTunnel } from "@mindvault/lightway";
+
+const PASSTHROUGH_TUNNEL: LightwayTunnel = {
+  isReady: true,
+  send: (url, init) => fetch(url, init),
+  close: () => {},
+};
 
 export class AbelianClient {
   private readonly baseUrl: string;
   private readonly privateKey: string;
+  private readonly tunnel: LightwayTunnel;
 
-  constructor(baseUrl: string, dilithiumPrivateKey: string) {
+  constructor(baseUrl: string, dilithiumPrivateKey: string, tunnel: LightwayTunnel = PASSTHROUGH_TUNNEL) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
     this.privateKey = dilithiumPrivateKey;
+    this.tunnel = tunnel;
   }
 
   /**
@@ -43,7 +52,7 @@ export class AbelianClient {
       };
     }
 
-    const resp = await fetch(`${this.baseUrl}/api/credential/mint`, {
+    const resp = await this.tunnel.send(`${this.baseUrl}/api/credential/mint`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),

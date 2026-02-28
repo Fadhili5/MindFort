@@ -23,6 +23,12 @@ const schema = z.object({
    */
   BACKEND_DILITHIUM_PRIVATE_KEY: z.string().default("stub"),
 
+  /** Lightway DTLS tunnel settings */
+  LIGHTWAY_SERVER_IP: z.string().default("127.0.0.1"),
+  LIGHTWAY_PORT:      z.coerce.number().default(443),
+  LIGHTWAY_PSK:       z.string().default("stub-psk"),
+  LIGHTWAY_MODE:      z.enum(["stub", "wasm"]).default("stub"),
+
   /** Comma-separated allowed CORS origins */
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
 

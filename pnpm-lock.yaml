@@ -26,6 +26,9 @@ importers:
       '@fastify/sensible':
         specifier: ^5.6.0
         version: 5.6.0
+      '@mindvault/lightway':
+        specifier: workspace:*
+        version: link:../../packages/lightway
       '@mindvault/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -45,6 +48,15 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/lightway:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.19.13
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
