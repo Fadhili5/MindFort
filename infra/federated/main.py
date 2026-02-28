@@ -6,17 +6,31 @@ runs FedAvg aggregation, and serves updated global model weights.
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import base64
+import logging
 import time
 import struct
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("federated")
+
 app = FastAPI(title="MindVault Federated Server")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- In-memory state ---
 current_model_version = "v0.0.1"
 current_weights: bytes = b""
 gradient_buffer: list[dict] = []
+aggregation_count = 0
+total_gradients_received = 0
 MIN_GRADIENTS_FOR_AGGREGATION = 2
 
 
@@ -30,12 +44,26 @@ class GradientPayload(BaseModel):
 class GradientAckResponse(BaseModel):
     accepted: bool
     newModelVersion: str | None = None
+    bufferSize: int = 0
+    bufferThreshold: int = MIN_GRADIENTS_FOR_AGGREGATION
 
 
 class GlobalModelUpdate(BaseModel):
     modelVersion: str
     weights: str          # base64-encoded
     publishedAt: int
+
+
+class ServerStats(BaseModel):
+    modelVersion: str
+    totalGradientsReceived: int
+    aggregationsPerformed: int
+    bufferSize: int
+    bufferThreshold: int
+    uptime: float
+
+
+_start_time = time.time()
 
 
 def fedavg_aggregate(buffers: list[dict]) -> bytes:
@@ -67,19 +95,28 @@ def fedavg_aggregate(buffers: list[dict]) -> bytes:
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "modelVersion": current_model_version}
 
 
 @app.post("/gradients", response_model=GradientAckResponse)
 async def submit_gradient(payload: GradientPayload):
-    global current_model_version, current_weights
+    global current_model_version, current_weights, aggregation_count, total_gradients_received
 
+    total_gradients_received += 1
     gradient_buffer.append(payload.model_dump())
+    logger.info(
+        "Gradient received: sampleCount=%d modelVersion=%s buffer=%d/%d",
+        payload.sampleCount,
+        payload.modelVersion,
+        len(gradient_buffer),
+        MIN_GRADIENTS_FOR_AGGREGATION,
+    )
 
     # Aggregate when buffer is full
     if len(gradient_buffer) >= MIN_GRADIENTS_FOR_AGGREGATION:
         aggregated = fedavg_aggregate(gradient_buffer)
         gradient_buffer.clear()
+        aggregation_count += 1
 
         # Bump version
         parts = current_model_version.lstrip("v").split(".")
@@ -87,12 +124,26 @@ async def submit_gradient(payload: GradientPayload):
         current_model_version = "v" + ".".join(parts)
         current_weights = aggregated
 
+        logger.info(
+            "FedAvg aggregation #%d complete → %s (%d bytes)",
+            aggregation_count,
+            current_model_version,
+            len(aggregated),
+        )
+
         return GradientAckResponse(
             accepted=True,
             newModelVersion=current_model_version,
+            bufferSize=0,
+            bufferThreshold=MIN_GRADIENTS_FOR_AGGREGATION,
         )
 
-    return GradientAckResponse(accepted=True, newModelVersion=None)
+    return GradientAckResponse(
+        accepted=True,
+        newModelVersion=None,
+        bufferSize=len(gradient_buffer),
+        bufferThreshold=MIN_GRADIENTS_FOR_AGGREGATION,
+    )
 
 
 @app.get("/model", response_model=GlobalModelUpdate)
@@ -101,4 +152,16 @@ async def get_model():
         modelVersion=current_model_version,
         weights=base64.b64encode(current_weights).decode(),
         publishedAt=int(time.time() * 1000),
+    )
+
+
+@app.get("/stats", response_model=ServerStats)
+async def get_stats():
+    return ServerStats(
+        modelVersion=current_model_version,
+        totalGradientsReceived=total_gradients_received,
+        aggregationsPerformed=aggregation_count,
+        bufferSize=len(gradient_buffer),
+        bufferThreshold=MIN_GRADIENTS_FOR_AGGREGATION,
+        uptime=round(time.time() - _start_time, 2),
     )

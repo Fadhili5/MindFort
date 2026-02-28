@@ -1,0 +1,2 @@
+# Lightway WASM binary is a build artifact.
+# Run scripts/build-wasm.sh to produce lightway.wasm here.
