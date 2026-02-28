@@ -1,36 +1,24 @@
-/**
- * POST /api/credential/mint
- *
- * Internal route — mints a single credential directly.
- * Primarily used for testing the Abelian integration without a full session.
- * Should not be publicly exposed in production.
- */
-
 import type { FastifyInstance } from "fastify";
-import type { CredentialMintRequest, CredentialMintResponse } from "@mindvault/types";
-import type { AbelianClient } from "../services/abelian.js";
+import { credentialMintSchema } from "@mindvault/api-types";
+import type { AppConfig } from "../config.js";
+import { mintCredential } from "../services/credentialService.js";
+import { cacheMint, getCachedMint } from "../services/idempotency.js";
 
-export function registerCredentialRoutes(
-  app: FastifyInstance,
-  deps: { abelian: AbelianClient }
-): void {
-  app.post<{ Body: CredentialMintRequest; Reply: CredentialMintResponse }>(
-    "/api/credential/mint",
-    {
-      schema: {
-        body: {
-          type: "object",
-          required: ["studentPublicKey", "attestation"],
-          properties: {
-            studentPublicKey: { type: "string" },
-            attestation: { type: "object" },
-          },
-        },
-      },
-    },
-    async (request, reply) => {
-      const result = await deps.abelian.mintCredential(request.body);
-      return reply.send(result);
+export async function registerCredentialRoutes(app: FastifyInstance, config: AppConfig): Promise<void> {
+  app.post("/api/credential/mint", { preHandler: [app.authenticate] }, async (request, reply) => {
+    const body = credentialMintSchema.parse(request.body);
+
+    if (body.pseudoId !== request.auth.pseudoId) {
+      return reply.status(403).send({ message: "Pseudo ID mismatch." });
     }
-  );
+
+    const cached = getCachedMint(body);
+    if (cached) {
+      return reply.status(200).send({ ...cached, idempotent: true });
+    }
+
+    const result = await mintCredential(config, body);
+    cacheMint(body, result);
+    return reply.status(201).send(result);
+  });
 }

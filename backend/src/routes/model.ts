@@ -1,47 +1,10 @@
-/**
- * GET /api/model/latest
- *
- * Returns the current global model version from the federated server.
- * Clients download this after a session to update their local Phi-3 weights.
- */
-
 import type { FastifyInstance } from "fastify";
-import type { LatestModelResponse } from "@mindvault/types";
-import type { FederatedClient } from "../services/federated.js";
+import type { AppConfig } from "../config.js";
+import { getModelVersion } from "../services/federatedService.js";
 
-export function registerModelRoutes(
-  app: FastifyInstance,
-  deps: { federated: FederatedClient }
-): void {
-  app.get<{ Reply: LatestModelResponse }>(
-    "/api/model/latest",
-    {
-      schema: {
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              model: { type: "object" },
-            },
-          },
-        },
-      },
-    },
-    async (_request, reply) => {
-      try {
-        const model = await deps.federated.getLatestModel();
-        return reply.send({ model });
-      } catch (err) {
-        // Federated server not yet running — return a stub so the API stays usable
-        app.log.warn({ err }, "Federated server unavailable — returning stub model");
-        return reply.send({
-          model: {
-            modelVersion: "unavailable",
-            weights: "",
-            publishedAt: 0,
-          },
-        });
-      }
-    }
-  );
+export async function registerModelRoutes(app: FastifyInstance, config: AppConfig): Promise<void> {
+  app.get("/api/model/version", { preHandler: [app.authenticate] }, async (_request, reply) => {
+    const modelVersion = await getModelVersion(config);
+    return reply.send(modelVersion);
+  });
 }
