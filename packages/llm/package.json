@@ -1,0 +1,30 @@
+{
+  "name": "@mindvault/llm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@mindvault/types": "workspace:*",
+    "@mlc-ai/web-llm": "^0.2.73"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "@mindvault/mastery": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@mindvault/mastery": { "optional": true }
+  }
+}
