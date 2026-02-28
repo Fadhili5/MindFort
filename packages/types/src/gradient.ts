@@ -20,6 +20,10 @@ export interface GradientAckResponse {
   accepted: boolean;
   /** Updated global model version after aggregation, if available */
   newModelVersion: string | null;
+  /** Current number of gradients in the aggregation buffer */
+  bufferSize?: number;
+  /** Number of gradients required before aggregation triggers */
+  bufferThreshold?: number;
 }
 
 /**
