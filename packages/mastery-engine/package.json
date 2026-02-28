@@ -1,9 +1,12 @@
 {
-  "name": "mindvault-packages",
+  "name": "@mindvault/mastery-engine",
   "version": "1.0.0",
-  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/index.test.js"
   }
 }

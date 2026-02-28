@@ -1,3 +1,3 @@
-# MindVault Shared Packages
+# @mindvault/mastery-engine
 
-Shared TypeScript package workspace for adaptive engine, API schemas, LLM abstraction, and Abelian wrapper.
+Pure TypeScript adaptive mastery engine implementing SM-2 spaced repetition and tutoring scaffolding decisions.
