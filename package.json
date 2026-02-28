@@ -1,20 +1,26 @@
 {
   "name": "mindvault",
+  "version": "1.0.0",
   "private": true,
+  "description": "MindVault monorepo",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "infra/lightway",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "test": "turbo test",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck"
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspace frontend & npm run dev --workspace backend",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2",
-    "prettier": "^3.4.2"
-  },
-  "packageManager": "pnpm@10.24.0",
-  "engines": {
-    "node": ">=20"
+    "typescript": "^5.7.3"
   }
 }

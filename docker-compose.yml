@@ -1,62 +1,99 @@
-# ─────────────────────────────────────────────────────────────────────
-# MindVault — Docker Compose
-# Usage: docker compose up
-# ─────────────────────────────────────────────────────────────────────
-
 services:
-  # ── Backend API ──────────────────────────────────────────────────
-  api:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    ports:
-      - "3001:3001"
-    environment:
-      PORT: 3001
-      HOST: 0.0.0.0
-      NODE_ENV: development
-      ABELIAN_NODE_URL: http://localhost:8732
-      FED_SERVER_URL: http://federated:8000
-      LIGHTWAY_MODE: stub
-      LIGHTWAY_PSK: stub-psk
-      CORS_ORIGIN: http://localhost:3000
-      BACKEND_DILITHIUM_PRIVATE_KEY: stub
-    depends_on:
-      federated:
-        condition: service_started
-      ollama:
-        condition: service_started
-    restart: unless-stopped
-
-  # ── Frontend (Next.js) ──────────────────────────────────────────
-  web:
+  frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://backend:4000
+      NEXT_PUBLIC_ABELIAN_EXPLORER_BASE_URL: ${NEXT_PUBLIC_ABELIAN_EXPLORER_BASE_URL:-https://explorer.abelian.info}
+      NEXT_PUBLIC_DEMO_MODE: ${DEMO_MODE:-true}
+      NEXT_PUBLIC_LLM_PROVIDER: webllm
+      NEXT_PUBLIC_LLM_PROXY_URL: http://backend:4000/api/llm
     ports:
       - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://api:3001
     depends_on:
-      - api
-    restart: unless-stopped
+      - backend
 
-  # ── Federated Learning Server (FedAvg) ───────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      PORT: 4000
+      HOST: 0.0.0.0
+      JWT_SECRET: ${JWT_SECRET}
+      ABELIAN_RPC_URL: ${ABELIAN_RPC_URL}
+      ABELIAN_RPC_TOKEN: ${ABELIAN_RPC_TOKEN}
+      FEDERATED_URL: ${FEDERATED_URL}
+      LLAMA_CPP_URL: ${LLAMA_CPP_URL}
+      LLAMA_MODEL: ${LLAMA_MODEL:-phi-3-mini-4k-instruct-q4_k_m.gguf}
+      LLAMA_TIMEOUT_MS: ${LLAMA_TIMEOUT_MS:-5000}
+      LLAMA_MAX_TOKENS: ${LLAMA_MAX_TOKENS:-300}
+      LLAMA_TOP_P: ${LLAMA_TOP_P:-0.9}
+      LLAMA_REPEAT_PENALTY: ${LLAMA_REPEAT_PENALTY:-1.1}
+      LLAMA_SEED: ${LLAMA_SEED:-42}
+      LIGHTWAY_PROXY_URL: ${LIGHTWAY_PROXY_URL}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      RATE_LIMIT_MAX: 120
+      RATE_LIMIT_WINDOW: 1 minute
+    ports:
+      - "4000:4000"
+    depends_on:
+      - federated
+      - lightway
+      - llama-cpp
+
   federated:
     build:
       context: ./infra/federated
+      dockerfile: Dockerfile
     ports:
-      - "8000:8000"
-    restart: unless-stopped
+      - "8081:8081"
 
-  # ── Ollama LLM Sidecar (dev mode) ───────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
+  llama-cpp:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    command:
+      - "--model"
+      - "/models/${LLAMA_MODEL:-phi-3-mini-4k-instruct-q4_k_m.gguf}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "--ctx-size"
+      - "4096"
+      - "--seed"
+      - "${LLAMA_SEED:-42}"
+      - "--threads"
+      - "4"
+      - "--n-gpu-layers"
+      - "0"
+      - "--no-warmup"
     volumes:
-      - ollama-models:/root/.ollama
-    restart: unless-stopped
+      - ./models:/models:ro
+    environment:
+      LLAMA_CACHE: "0"
+    mem_limit: 3500m
+    cpus: 2.0
+    ports:
+      - "8080:8080"
 
-volumes:
-  ollama-models:
+  lightway:
+    build:
+      context: ./infra/lightway
+      dockerfile: Dockerfile
+    environment:
+      LIGHTWAY_TOKEN: ${ABELIAN_RPC_TOKEN}
+      LIGHTWAY_REMOTE_HOST: example-vpn-gateway
+      LIGHTWAY_REMOTE_PORT: "443"
+      LIGHTWAY_ENABLE_MLKEM: "true"
+      LIGHTWAY_FALLBACK_DIRECT: "true"
+    ports:
+      - "8090:8090"
+
+networks:
+  default:
+    name: mindvault-net

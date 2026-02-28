@@ -1,7 +1,10 @@
-node_modules/
-dist/
-.turbo/
+node_modules
+.next
+dist
+coverage
 .env
 .env.local
-*.env
-*.next
+*.log
+__pycache__
+.pytest_cache
+.venv
