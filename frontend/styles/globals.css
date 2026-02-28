@@ -1,25 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #141414;
-  --border: #262626;
-  --muted: #737373;
-  --accent: #6366f1;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
+  --background: 220 20% 97%;   /* soft off-white like JetpackED */
+  --foreground: 234 45% 12%;   /* deep navy */
+  --card: 0 0% 100%;
+  --border: 220 14% 91%;
+  --accent: 188 78% 37%;       /* teal */
+  --success: 143 76% 33%;
+  --warning: 24 90% 52%;
+  --radius: 14px;
 }
 
 body {
-  @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
-  font-family: "Inter", system-ui, sans-serif;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  min-height: 100vh;
+  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Privacy-safe indicator glow */
-.privacy-glow {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+/* tutor workspace grid pattern */
+.grid-glow {
+  background-image:
+    linear-gradient(rgba(10, 20, 40, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 20, 40, 0.05) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+/* hide scrollbar for level strip */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
