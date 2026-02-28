@@ -1,0 +1,3 @@
+# Phi-3-mini — 3.8B params, 4-bit quantised
+# Used as dev-mode LLM sidecar; replaced by WebLLM on demo machine
+FROM phi3:mini
