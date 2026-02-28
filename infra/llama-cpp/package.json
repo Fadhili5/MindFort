@@ -1,0 +1,9 @@
+{
+  "name": "mindvault-llama-cpp",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'llama.cpp container image service'",
+    "typecheck": "echo 'No TypeScript in this service'"
+  }
+}

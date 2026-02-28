@@ -1,0 +1,9 @@
+{
+  "name": "mindvault-federated",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Python service builds in Docker'",
+    "typecheck": "echo 'No TypeScript in this service'"
+  }
+}

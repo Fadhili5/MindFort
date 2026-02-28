@@ -1,6 +1,9 @@
 {
-  "name": "@mindvault/infra",
-  "version": "0.1.0",
+  "name": "mindvault-infra",
+  "version": "1.0.0",
   "private": true,
-  "type": "module"
+  "scripts": {
+    "build": "echo 'Build individual infra services'",
+    "typecheck": "echo 'No direct TypeScript in infra root'"
+  }
 }
